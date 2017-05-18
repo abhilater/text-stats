@@ -1,14 +1,12 @@
 # text-stats
 
-FIXME: description
+Parses text files to filter out english stop words followed by generating statistics like n number most used and least used words
 
 ## Installation
 
 Download from http://example.com/FIXME.
 
 ## Usage
-
-FIXME: explanation
 
     $ java -jar text-stats-0.1.0-standalone.jar [args]
 
