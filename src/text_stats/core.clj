@@ -109,8 +109,8 @@
 
 
 (defn get-top-n-1
-  [filename n]
-  (let [freq-map (calc-word-freqs-line-by-line-transducer filename)]
+  [filenames n]
+  (let [freq-map (calc-word-freqs-line-by-line-transducer filenames)]
     (take n (sort-by val > freq-map))))
 
 
