@@ -78,8 +78,8 @@
 
 ;; TODO read file line by line and process
 
-(defn calc-word-freqs-line-by-line [filename]
-  (reduce #(merge-with + %1 %2) {} (->> (create-file-line-seq filename)
+(defn calc-word-freqs-line-by-line [filenames]
+  (reduce #(merge-with + %1 %2) {} (->> filenames (mapcat create-file-line-seq)
        (map #(re-seq #"\w+" %))
        (filter #(not (contains? stop-words-set %)))
        (filter #(not (nil? %)))
@@ -91,6 +91,7 @@
 
 (def xform
   (comp
+    (mapcat create-file-line-seq)
     (map #(re-seq #"\w+" %))
     (filter #(not (contains? stop-words-set %)))
     (filter #(not (nil? %)))
@@ -98,15 +99,13 @@
 
 
 (defn xreducing
-  ([]
-   [])
-  ([result]
-   result)
+  ([] [])
+  ([result] result)
   ([result input] (merge-with + result input)))
 
 
-(defn calc-word-freqs-line-by-line-transducer [filename]
-  (transduce xform xreducing {} (create-file-line-seq filename)))
+(defn calc-word-freqs-line-by-line-transducer [filenames]
+  (transduce xform xreducing {} filenames))
 
 
 (defn get-top-n-1
@@ -116,21 +115,22 @@
 
 
 (defn get-top-n-2
-  [filename n]
-  (let [freq-map (calc-word-freqs-line-by-line filename)]
+  [filenames n]
+  (let [freq-map (calc-word-freqs-line-by-line filenames)]
     (take n (sort-by val > freq-map))))
 
 
 
-;(defn process-with-transducer [filenames]
-;  (for [filename filenames]
-;    (transduce xform xreducing {} (create-file-line-seq filename))
-;    ))
-;(time (doall (process-with-transducer (repeat 1 "alice.txt"))))
-;(time (doall (process-with-transducer (repeat 1 "t8.shakespeare.txt"))))
-;(time (doall (for [filename (repeat 1 "t8.shakespeare.txt")]
-;               (calc-word-freqs-line-by-line filename))))
-;"Elapsed time: 1662.933099 msecs"
+; (time (calc-word-freqs-line-by-line (repeat 10 "t8.shakespeare.txt")))
+;"Elapsed time: 17104.502851 msecs"
+;(time (calc-word-freqs-line-by-line-transducer (repeat 10 "t8.shakespeare.txt")))
+;"Elapsed time: 15939.241162 msecs"
+
+;(time (calc-word-freqs-line-by-line (repeat 50 "t8.shakespeare.txt")))
+;"Elapsed time: 81843.445115 msecs"
+;(time (calc-word-freqs-line-by-line-transducer (repeat 50 "t8.shakespeare.txt")))
+;"Elapsed time: 81814.07475 msecs"
+
 
 ;; TODO using transducer and pileline
 
@@ -147,14 +147,14 @@
 ;    (merge-with + (async/<!! c)))
 ;
 ;    )
-
-(defn process-parallel [filename]
-  (a/<!!
-    (a/pipeline
-      (.availableProcessors (Runtime/getRuntime)) ;; Parallelism factor
-      (doto (a/chan) (a/close!))                  ;; Output channel - /dev/null
-      xform
-      (a/to-chan filename))))                        ;; Channel with input data
+;
+;(defn process-parallel [filename]
+;  (a/<!!
+;    (a/pipeline
+;      (.availableProcessors (Runtime/getRuntime)) ;; Parallelism factor
+;      (doto (a/chan) (a/close!))                  ;; Output channel - /dev/null
+;      xform
+;      (a/to-chan filename))))                        ;; Channel with input data
 
 
 
